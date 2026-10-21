@@ -17,17 +17,16 @@ First public pre-release.
 - Project import from GitHub URLs or local folders, with static package and launch-file discovery, multi-workspace detection (e.g. `humble_ws/` + `jazzy_ws/`), simulator auto-detection and duplicate package-name guards.
 - Machine-wide cache of local `colcon` workspaces and runnable launch files for instant indexing.
 - Readiness-gated bring-up runbook: step-by-step project startup with clean-environment `colcon` builds, dependency checks and live readiness gates (`/clock`, ports, topics).
-- "Can it move?" closed-loop probe: discovers velocity subscribers, negotiates `Twist` vs `TwistStamped`, drives at 0.1 m/s for 1.5 s and verifies motion on `/odom`. <!-- TODO: name the safety guards, e.g. "aborts if /odom is silent; publishes zero velocity on exit" -->
+- "Can it move?" closed-loop probe: discovers velocity subscribers, negotiates `Twist` vs `TwistStamped`, drives at 0.1 m/s for 1.5 s and verifies motion on `/odom`. It never moves without odometry, always sends zero velocity at the end, and refuses to pick between several robots.
 - Project Doctor with Quick (~2 s) and Deep (~5 s) modes, covering build state, environment overlays, RMW/Zenoh routers, orphaned or duplicate simulators, QoS mismatches, `/clock`, `/odom` and TF trees. Rules are documented in `docs/DIAGNOSTIC_RULES.md`.
 - One-click diagnostic export: a Markdown report for pasting into GitHub issues or LLM debugging sessions.
 - Example profiles (TurtleBot3 + Gazebo Harmonic, end-to-end verified; Isaac Sim attach), unit and smoke test suites, and `tools/ci_smoke.sh`.
 
 ### Known limitations
 
-<!-- TODO: confirm and edit before tagging -->
-- Tested on: ROS 2 Jazzy / Humble on Ubuntu (WSL2) — adjust to what you actually verified.
+- Verified on Ubuntu 24.04 + ROS 2 Jazzy (WSL2 and native) with Gazebo Harmonic; CI runs on the `ros:jazzy` image. Humble is expected to work but is not tested in CI.
 - Isaac Sim attach profile assumes Isaac Sim running on the Windows host with the ROS 2 bridge enabled.
 - Alpha: APIs, profile format and dashboard layout may change without notice.
 
-[Unreleased]: https://github.com/<owner>/roshub/compare/v0.1.0-alpha...HEAD
-[0.1.0-alpha]: https://github.com/<owner>/roshub/releases/tag/v0.1.0-alpha
+[Unreleased]: https://github.com/iameijaz/roshub/compare/v0.1.0-alpha...HEAD
+[0.1.0-alpha]: https://github.com/iameijaz/roshub/releases/tag/v0.1.0-alpha

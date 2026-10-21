@@ -7,9 +7,9 @@ ROSHub is designed to stay **fast, deterministic and lightweight**: Python 3.10+
 ## 1. Getting set up
 
 ```bash
-git clone [https://github.com/iameijaz/roshub.git](https://github.com/iameijaz/roshub.git)
+git clone https://github.com/iameijaz/roshub.git
 cd roshub
-./install.sh                     # installs PyYAML if needed and puts `roshub` on your PATH
+./install.sh                     # checks your setup (lists any missing packages) and puts `roshub` on your PATH
 source /opt/ros/jazzy/setup.bash # or humble
 roshub                           # opens the dashboard at http://localhost:8090
 
@@ -50,7 +50,8 @@ Before opening a pull request, run the unit tests and the CI smoke script from t
 
 ```bash
 # Unit tests (diagnostics, import, profile schema, runbook)
-PYTHONPATH=. python3 -m unittest discover -s roshub/tests -p "test_*.py"
+python3 -m pip install pytest pyyaml
+python3 -m pytest -q roshub/tests
 
 # CI smoke test
 bash tools/ci_smoke.sh
@@ -77,5 +78,3 @@ To keep ROSHub trustworthy and lightweight:
 ## License
 
 By contributing, you agree that your contributions are licensed under the same license as the project (see [`LICENSE`](LICENSE)).
-
-```
