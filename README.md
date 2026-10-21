@@ -17,7 +17,7 @@
 </div>
 
 ---
-
+#### NOTE: This project(existed in an experimental version before)  was kept local, until i decided to make it robust enough to open source it. 
 ## Why ROS 2 Needs a Pre-Flight Layer
 
 **ROS 2 fails quietly.**
