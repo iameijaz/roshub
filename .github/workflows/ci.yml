@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install test tools
-        run: apt-get update -q && apt-get install -y -q python3-pytest python3-yaml curl git
+        run: apt-get update -q && apt-get install -y -q python3-pytest python3-yaml python3-venv curl git
       - name: Unit tests
         run: python3 -m pytest -q roshub/tests
       - name: Shell syntax
@@ -22,3 +22,13 @@ jobs:
         run: |
           source /opt/ros/jazzy/setup.bash
           tools/ci_smoke.sh
+      - name: pip install smoke test
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          python3 -m venv --system-site-packages /tmp/venv
+          /tmp/venv/bin/pip install -q build
+          /tmp/venv/bin/python -m build -q --outdir /tmp/dist .
+          /tmp/venv/bin/pip install -q /tmp/dist/*.whl
+          /tmp/venv/bin/roshub --version
+          ROSHUB_CMD=/tmp/venv/bin/roshub tools/ci_smoke.sh

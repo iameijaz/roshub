@@ -13,3 +13,5 @@ CLAUDE.local.md
 CLAUDE.md
 docs/launch/
 docs/RELEASE_CHECKLIST.md
+dist/
+*.egg-info/

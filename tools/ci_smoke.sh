@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # End-to-end smoke test: fresh install -> start roshub -> import a folder -> create -> doctor.
 # Needs ROS 2 in /opt/ros. Uses a throwaway HOME, so it never touches a real ~/.roshub.
-#   tools/ci_smoke.sh
+#   tools/ci_smoke.sh                          git checkout: ./install.sh --yes, then roshub
+#   ROSHUB_CMD=/path/to/roshub tools/ci_smoke.sh   pip install: roshub setup --yes, then roshub
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 export HOME="$(mktemp -d)"
@@ -9,13 +10,21 @@ PORT=8090
 B="http://localhost:$PORT"
 fail() { echo "FAIL: $*"; [ -f "$HOME/roshub.log" ] && tail -40 "$HOME/roshub.log"; exit 1; }
 
-echo "== install.sh --yes"
-"$REPO/install.sh" --yes || fail "install.sh exited $?"
-[ -x "$HOME/.local/bin/roshub" ] || fail "roshub launcher not installed"
+if [ -n "${ROSHUB_CMD:-}" ]; then
+  echo "== roshub setup --yes (pip install)"
+  "$ROSHUB_CMD" setup --yes || fail "roshub setup exited $?"
+  [ ! -e "$HOME/.local/bin/roshub" ] || fail "pip install must not write ~/.local/bin/roshub"
+  START="$ROSHUB_CMD"
+else
+  echo "== install.sh --yes"
+  "$REPO/install.sh" --yes || fail "install.sh exited $?"
+  [ -x "$HOME/.local/bin/roshub" ] || fail "roshub launcher not installed"
+  START="$HOME/.local/bin/roshub"
+fi
 grep -q "^port: $PORT" "$HOME/.roshub/config.yaml" || fail "config.yaml missing port"
 
 echo "== start roshub"
-"$HOME/.local/bin/roshub" > "$HOME/roshub.log" 2>&1 &
+"$START" > "$HOME/roshub.log" 2>&1 &
 SERVER=$!
 trap 'kill $SERVER 2>/dev/null || true' EXIT
 for _ in $(seq 30); do curl -sf -o /dev/null "$B/" && break; sleep 1; done

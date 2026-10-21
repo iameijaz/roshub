@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/brand/roshub-logo-128.png" alt="ROSHub Logo" width="96" />
+<img src="https://raw.githubusercontent.com/iameijaz/roshub/main/docs/brand/roshub-logo-128.png" alt="ROSHub Logo" width="96" />
 
 # ROSHub
 
@@ -37,10 +37,16 @@
 Zero heavy web frameworks—just Python 3.10+ `stdlib` and `PyYAML`.
 
 ```bash
+pipx install roshub          # or: pip install roshub (inside a venv)
+roshub                       # first run asks a few setup questions, then opens http://localhost:8090
+```
+
+Or from a checkout:
+
+```bash
 git clone https://github.com/iameijaz/roshub.git && cd roshub
 ./install.sh                 # puts `roshub` on your PATH
-source /opt/ros/jazzy/setup.bash
-roshub                       # opens http://localhost:8090
+roshub
 ```
 
 ### Try It in 60 Seconds (TurtleBot3 + Gazebo)

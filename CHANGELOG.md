@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0-alpha.2] - 2026-10-21
+
+### Added
+
+- `pip install roshub` / `pipx install roshub`: the `roshub` command runs setup on first launch (`roshub setup` to re-run) and refreshes the app files after an upgrade.
+- Releases are published to PyPI automatically; CI also tests the built package.
+
+### Changed
+
+- The installer now lives in `roshub/install.sh`; `./install.sh` in a checkout still works.
+
 ## [0.1.0-alpha] - 2026-10-21
 
 First public pre-release.
@@ -28,5 +39,6 @@ First public pre-release.
 - Isaac Sim attach profile assumes Isaac Sim running on the Windows host with the ROS 2 bridge enabled.
 - Alpha: APIs, profile format and dashboard layout may change without notice.
 
-[Unreleased]: https://github.com/iameijaz/roshub/compare/v0.1.0-alpha...HEAD
+[Unreleased]: https://github.com/iameijaz/roshub/compare/v0.1.0-alpha.2...HEAD
+[0.1.0-alpha.2]: https://github.com/iameijaz/roshub/compare/v0.1.0-alpha...v0.1.0-alpha.2
 [0.1.0-alpha]: https://github.com/iameijaz/roshub/releases/tag/v0.1.0-alpha

@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "roshub"
+dynamic = ["version"]
+description = "Run, test and debug your ROS 2 projects from one local page."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Ijaz Ahmed" }]
+requires-python = ">=3.10"
+dependencies = ["PyYAML>=5.4"]
+keywords = ["ros2", "robotics", "diagnostics", "gazebo", "developer-tools"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Debuggers",
+]
+
+[project.urls]
+Homepage = "https://github.com/iameijaz/roshub"
+Issues = "https://github.com/iameijaz/roshub/issues"
+Changelog = "https://github.com/iameijaz/roshub/blob/main/CHANGELOG.md"
+
+[project.scripts]
+roshub = "roshub.cli:main"
+
+[tool.setuptools]
+packages = ["roshub", "roshub.tools"]
+
+[tool.setuptools.package-data]
+roshub = ["*.html", "*.sh"]
+"roshub.tools" = ["*.sh"]
+
+[tool.setuptools.dynamic]
+version = { attr = "roshub.__version__" }
