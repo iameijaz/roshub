@@ -41,6 +41,13 @@ pipx install roshub          # or: pip install roshub (inside a venv)
 roshub                       # first run asks a few setup questions, then opens http://localhost:8090
 ```
 
+Check the install:
+
+```bash
+roshub --version             # works for pipx, pip and checkout installs
+pip show roshub              # pip installs only (pipx keeps roshub in its own environment: use `pipx list`)
+```
+
 Or from a checkout:
 
 ```bash
