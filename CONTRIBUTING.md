@@ -1,50 +1,47 @@
 # Contributing to ROSHub
 
-Thanks for helping. ROSHub is small on purpose, so the bar for a change is: does it make bring-up or debugging of a ROS 2 project clearer?
+Thanks for helping make ROS 2 bring-up and debugging less painful! 
 
-## Reporting a bug
+ROSHub is designed to stay **fast, deterministic, and zero-bloat** (Python 3.10+ standard library + `PyYAML`). Here is how you can contribute effectively.
 
-1. Open **Diagnostics**, select the project, run the **deep** check.
-2. Press **Report** and attach the Markdown file. It has paths and host names masked, but read it before posting.
-3. Use the bug report template. Say what you expected and what happened.
+---
 
-## Proposing a doctor rule
+## 1. Reporting Bugs (Include a ROSHub Report!)
 
-Most valuable contribution. Open an issue with:
+The fastest way to get a bug fixed is to click **Report** inside ROSHub (`http://localhost:8090`) and paste the generated Markdown diagnostic bundle into a [**Bug Report Issue**](.github/ISSUE_TEMPLATE/bug_report.md). That gives us the exact environment, RMW, workspace state, and failing gate without back-and-forth guessing.
 
-- **Symptom** as a user sees it (and the exact error text, if any)
-- **Root cause**
-- **Detection**: how to check it automatically, without changing the system
-- **Fix** the user should apply
+---
 
-Rules live in `roshub/doctor/` and are listed in [docs/DIAGNOSTIC_RULES.md](docs/DIAGNOSTIC_RULES.md). A rule must be read-only, finish in under ~1 s (quick) or ~5 s (deep), and give one clear next step.
+## 2. Proposing or Adding a New `Project Doctor` Rule
 
-## Development setup
+Every ROS 2 developer has lost hours to a silent failure mode. If you hit a failure that ROSHub didn't catch:
+1. Open a [**New Doctor Rule**](.github/ISSUE_TEMPLATE/doctor_rule.md) issue describing:
+   * **Symptom:** What silently failed? (e.g., node running, topic listed, robot doesn't move)
+   * **Root cause:** Which layer broke? (build, overlay, RMW/Zenoh, QoS, `/clock`, TF, controller, orphaned process)
+   * **How to detect it deterministically:** What command, topic info, or process check proves it?
+   * **Remediation:** What exact command or change fixes it?
+2. Or implement it directly in `roshub/diagnostics.py` / `roshub/tools/project_doctor.py` and document the rule ID in [`docs/DIAGNOSTIC_RULES.md`](docs/DIAGNOSTIC_RULES.md).
+
+---
+
+## 3. Running the Tests Locally
+
+Before opening a Pull Request, run the unit test suite and CI smoke script:
 
 ```bash
-git clone https://github.com/<you>/roshub && cd roshub
-python3 -m venv .venv --system-site-packages && source .venv/bin/activate
-pip install pyyaml pytest
-pytest -q roshub/tests
-python3 roshub/ui_server.py --port 8091          # run from the checkout, next to an installed one
-tools/ci_smoke.sh                                # what CI runs: fresh install → start → import → create → doctor (throwaway HOME)
+# Run unit tests (diagnostics, import, profile schema, runbook)
+python3 -m unittest discover -s roshub/tests -p "test_*.py"
+
+# Run the CI smoke test
+bash tools/ci_smoke.sh
 ```
 
-## Pull requests
+---
 
-- One change per PR; describe the user-visible effect.
-- Add or update tests. Doctor rules get a test with a fake graph/process list.
-- No new runtime dependencies without discussion (the server is stdlib + PyYAML).
-- UI: keep it keyboard-usable, labelled for screen readers, readable in light and dark.
-- Never commit personal paths, host names or tokens.
+## 4. Design Guardrails for PRs
 
-## Safety rules (non-negotiable)
-
-- Nothing from an imported repo runs at import time.
-- ROSHub never installs packages or uses sudo by itself.
-- Motion tests: low speed, short duration, always send zero at the end, never move without odometry, never pick between several robots.
-- Deleting moves things to a trash folder; it never `rm`s user data.
-
-## Code of conduct
-
-Be kind and specific. Assume good intent. Maintainers may close issues that are hostile or off-topic.
+To keep ROSHub trustworthy and lightweight:
+* **No heavy runtime dependencies:** Stick to Python 3.10+ `stdlib` and `PyYAML`.
+* **Never execute untrusted repo code on import:** `hub_import.py` and `project_detect.py` must only parse files statically (`package.xml`, launch files, directories).
+* **Never install packages silently:** Always surface the exact `rosdep` or `apt` command for the user to run.
+* **Never move a robot blindly:** Any changes to `motion_probe.py` must preserve the odometry requirement and multi-robot ambiguity guards.
