@@ -1,47 +1,81 @@
 # Contributing to ROSHub
 
-Thanks for helping make ROS 2 bring-up and debugging less painful! 
+Thanks for helping make ROS 2 bring-up and debugging less painful!
 
-ROSHub is designed to stay **fast, deterministic, and zero-bloat** (Python 3.10+ standard library + `PyYAML`). Here is how you can contribute effectively.
+ROSHub is designed to stay **fast, deterministic and lightweight**: Python 3.10+ standard library plus `PyYAML`, nothing else at runtime. This guide covers how to contribute effectively.
 
----
-
-## 1. Reporting Bugs (Include a ROSHub Report!)
-
-The fastest way to get a bug fixed is to click **Report** inside ROSHub (`http://localhost:8090`) and paste the generated Markdown diagnostic bundle into a [**Bug Report Issue**](.github/ISSUE_TEMPLATE/bug_report.md). That gives us the exact environment, RMW, workspace state, and failing gate without back-and-forth guessing.
-
----
-
-## 2. Proposing or Adding a New `Project Doctor` Rule
-
-Every ROS 2 developer has lost hours to a silent failure mode. If you hit a failure that ROSHub didn't catch:
-1. Open a [**New Doctor Rule**](.github/ISSUE_TEMPLATE/doctor_rule.md) issue describing:
-   * **Symptom:** What silently failed? (e.g., node running, topic listed, robot doesn't move)
-   * **Root cause:** Which layer broke? (build, overlay, RMW/Zenoh, QoS, `/clock`, TF, controller, orphaned process)
-   * **How to detect it deterministically:** What command, topic info, or process check proves it?
-   * **Remediation:** What exact command or change fixes it?
-2. Or implement it directly in `roshub/diagnostics.py` / `roshub/tools/project_doctor.py` and document the rule ID in [`docs/DIAGNOSTIC_RULES.md`](docs/DIAGNOSTIC_RULES.md).
-
----
-
-## 3. Running the Tests Locally
-
-Before opening a Pull Request, run the unit test suite and CI smoke script:
+## 1. Getting set up
 
 ```bash
-# Run unit tests (diagnostics, import, profile schema, runbook)
-python3 -m unittest discover -s roshub/tests -p "test_*.py"
+git clone [https://github.com/iameijaz/roshub.git](https://github.com/iameijaz/roshub.git)
+cd roshub
+./install.sh                     # installs PyYAML if needed and puts `roshub` on your PATH
+source /opt/ros/jazzy/setup.bash # or humble
+roshub                           # opens the dashboard at http://localhost:8090
 
-# Run the CI smoke test
-bash tools/ci_smoke.sh
 ```
 
----
+If you are editing the code and want to run the server directly from the checkout without installing to your `PATH`:
 
-## 4. Design Guardrails for PRs
+```bash
+python3 -m pip install pyyaml
+python3 roshub/ui_server.py      # opens http://localhost:8090
+
+```
+
+You'll need a sourced ROS 2 installation (Humble or Jazzy) for anything beyond the unit tests.
+
+## 2. Reporting bugs: include a ROSHub report
+
+The fastest way to get a bug fixed is to click **Report** in the ROSHub dashboard (`http://localhost:8090`) and paste the generated Markdown diagnostic bundle into a LLM. That gives us the exact environment, RMW, workspace state and failing gate without back-and-forth guessing.
+
+If the dashboard won't start at all, include your OS, ROS 2 distro, Python version and the full terminal output instead.
+
+## 3. Proposing or adding a Project Doctor rule
+
+Every ROS 2 developer has lost hours to a silent failure mode. If you hit one that ROSHub didn't catch, you have two options.
+
+**Option A: open a Github issue** describing:
+
+* **Symptom:** what silently failed (e.g. node running, topic listed, robot doesn't move).
+* **Root cause:** which layer broke (build, overlay, RMW/Zenoh, QoS, `/clock`, TF, controller, orphaned process).
+* **Deterministic detection:** which command, topic info or process check proves it.
+* **Remediation:** the exact command or change that fixes it.
+
+**Option B: implement it yourself** in `roshub/diagnostics.py` or `roshub/tools/project_doctor.py`, add a test for it, and document the rule ID in [`docs/DIAGNOSTIC_RULES.md`](docs/DIAGNOSTIC_RULES.md).
+
+## 4. Running the tests
+
+Before opening a pull request, run the unit tests and the CI smoke script from the repository root:
+
+```bash
+# Unit tests (diagnostics, import, profile schema, runbook)
+PYTHONPATH=. python3 -m unittest discover -s roshub/tests -p "test_*.py"
+
+# CI smoke test
+bash tools/ci_smoke.sh
+
+```
+
+## 5. Design guardrails for pull requests
 
 To keep ROSHub trustworthy and lightweight:
-* **No heavy runtime dependencies:** Stick to Python 3.10+ `stdlib` and `PyYAML`.
-* **Never execute untrusted repo code on import:** `hub_import.py` and `project_detect.py` must only parse files statically (`package.xml`, launch files, directories).
-* **Never install packages silently:** Always surface the exact `rosdep` or `apt` command for the user to run.
-* **Never move a robot blindly:** Any changes to `motion_probe.py` must preserve the odometry requirement and multi-robot ambiguity guards.
+
+* **No heavy runtime dependencies.** Stick to the Python 3.10+ standard library and `PyYAML`. Test-only or dev-only tools are fine if they stay out of the runtime path.
+* **Never execute untrusted repo code on import.** `hub_import.py` and `project_detect.py` must only parse files statically (`package.xml`, launch files, directory layout).
+* **Never install packages silently.** Always show the user the exact `rosdep` or `apt` command to run.
+* **Never move a robot blindly.** Changes to `motion_probe.py` must keep the odometry requirement and the multi-robot ambiguity guards.
+
+## 6. Pull request checklist
+
+* [ ] Unit tests and `tools/ci_smoke.sh` pass locally.
+* [ ] New behaviour has a test in `roshub/tests/`.
+* [ ] User-visible changes are added under `[Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md).
+* [ ] New or changed Doctor rules are documented in [`docs/DIAGNOSTIC_RULES.md`](docs/DIAGNOSTIC_RULES.md).
+* [ ] No new runtime dependencies.
+
+## License
+
+By contributing, you agree that your contributions are licensed under the same license as the project (see [`LICENSE`](LICENSE)).
+
+```
