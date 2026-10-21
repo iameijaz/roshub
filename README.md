@@ -37,7 +37,7 @@
 Zero heavy web frameworks—just Python 3.10+ `stdlib` and `PyYAML`.
 
 ```bash
-git clone [https://github.com/iameijaz/roshub](https://github.com/iameijaz/roshub) && cd roshub
+git clone https://github.com/iameijaz/roshub.git && cd roshub
 ./install.sh                 # puts `roshub` on your PATH
 source /opt/ros/jazzy/setup.bash
 roshub                       # opens http://localhost:8090
@@ -47,7 +47,7 @@ roshub                       # opens http://localhost:8090
 1. Click **`+ New project`** → choose **GitHub URL**.
 2. Paste:
    ```text
-   [https://github.com/ROBOTIS-GIT/turtlebot3_simulations/tree/jazzy](https://github.com/ROBOTIS-GIT/turtlebot3_simulations/tree/jazzy)
+   https://github.com/ROBOTIS-GIT/turtlebot3_simulations.git
    ```
 3. Press **Fetch** → **Create** → **Start**.
 
@@ -111,6 +111,9 @@ Empirical studies of ROS and ROS 2 repositories and Q&A forums show that bring-u
 * **[`examples/`](examples/)**: Pre-configured project profiles including verified **TurtleBot3 + Gazebo** (`turtlebot3_gazebo.yaml`, `tb3_github.from_mvp.yaml`), **NVIDIA Isaac Sim Attach Mode** (`isaac_attach.yaml`), **MuJoCo Arm** (`mujoco_arm.yaml`), and **Webots UR5e** (`webots_ur5e.yaml`).
 * **[`docs/DIAGNOSTIC_RULES.md`](docs/DIAGNOSTIC_RULES.md)**: Full reference of quick (~2 s) and deep (~5 s) diagnostic checks.
 * **[`docs/TRIAL_LOG.md`](docs/TRIAL_LOG.md)**: End-to-end bring-up trial logs and test notes.
+---
+
+This project is still in Alpha Phase, and a support for Docker Containers, and Pixi is planned for future releases.
 
 ---
 
