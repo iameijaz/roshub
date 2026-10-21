@@ -1,0 +1,16 @@
+mujoco_arm:
+  description: ros2_control arm in MuJoCo (template)
+  meta: {project_type: arm, simulator: mujoco, rmw: rmw_zenoh_cpp, mode: robust, workspace: ${WS}}
+  env: {RMW_IMPLEMENTATION: rmw_zenoh_cpp}
+  runbook:
+  - id: router
+    title: Zenoh router
+    reuse: true
+    run: {cmd: ros2 run rmw_zenoh_cpp rmw_zenohd, bg: true}
+    ready: [{port: 7447}]
+    timeout: 20
+  - id: launch
+    title: ros2 launch (your MuJoCo package)
+    run: {cmd: "bash ${ROSHUB_HOME}/tools/ensure_built.sh ${WS} && source ${WS}/install/setup.bash && ros2 launch <your_pkg> <your_arm>.launch.py", bg: true}
+    ready: [{hz: /clock, min_hz: 1}]
+    timeout: 1800

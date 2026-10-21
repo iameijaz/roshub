@@ -1,0 +1,5 @@
+Published topics:
+ * /clock [rosgraph_msgs/msg/Clock] 1 publisher
+ * /odom [nav_msgs/msg/Odometry] 1 publisher
+Subscribed topics:
+ * /odom [nav_msgs/msg/Odometry] 1 subscriber

@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+*.bak*
+import/
+build/
+install/
+log/
+*.log
+.DS_Store
+*:Zone.Identifier
+CLAUDE.local.md
+CLAUDE.md
+docs/launch/

@@ -1,0 +1,40 @@
+husky_nav2:
+  description: Husky Nav2 in Gazebo
+  meta:
+    robot: Husky
+    project_type: single_robot
+    simulator: gazebo
+    rmw: rmw_zenoh_cpp
+    mode: robust
+    workspace: ~/husky_ws
+  env:
+    RMW_IMPLEMENTATION: rmw_zenoh_cpp
+  runbook:
+  - id: router
+    title: Zenoh router
+    reuse: true
+    run: {cmd: ros2 run rmw_zenoh_cpp rmw_zenohd, bg: true}
+    ready: [{port: 7447}]
+    timeout: 20
+  - id: sim
+    title: Gazebo
+    run: {cmd: source ~/husky_ws/install/setup.bash && ros2 launch husky_gazebo husky_playpen.launch.py, bg: true}
+    ready: [{hz: /clock, min_hz: 1}]
+    timeout: 180
+  - id: odom
+    title: Odometry
+    ready: [{hz: /odom, min_hz: 5}]
+    timeout: 60
+  - id: nav2
+    title: Nav2
+    run: {cmd: source ~/husky_ws/install/setup.bash && ros2 launch husky_navigation nav2.launch.py, bg: true}
+    ready:
+    - {nodes: amcl, min: 1}
+    - {echo: /amcl_pose, latched: true}
+    timeout: 120
+  - id: smoke
+    title: Send a goal
+    run:
+      cmd: 'ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose "{pose: {header: {frame_id: map}}}"'
+    ready: [{log: Goal accepted}]
+    optional: true

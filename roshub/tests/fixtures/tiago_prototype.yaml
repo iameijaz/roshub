@@ -1,0 +1,8 @@
+tiago_prototype:
+  description: TIAGo arm demo (plain steps)
+  steps:
+  - name: sim
+    cmd: ros2 launch tiago_gazebo tiago_gazebo.launch.py
+  - name: moveit
+    wait_for_topic: /joint_states
+    cmd: ros2 launch tiago_moveit_config move_group.launch.py

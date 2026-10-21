@@ -1,0 +1,38 @@
+tb3_github:
+  description: TurtleBot3 World (imported from GitHub)
+  meta:
+    robot: turtlebot3_burger
+    project_type: mobile
+    simulator: gazebo
+    rmw: rmw_zenoh_cpp
+    mode: robust
+    workspace: ${HOME}/roshub_ws/turtlebot3_simulations
+    tags: []
+    motion:
+      topic: /cmd_vel
+      type: TwistStamped
+      verified: false
+  env:
+    RMW_IMPLEMENTATION: rmw_zenoh_cpp
+    TURTLEBOT3_MODEL: burger
+  runbook:
+  - id: router
+    title: Zenoh router
+    reuse: true
+    run:
+      cmd: ros2 run rmw_zenoh_cpp rmw_zenohd
+      bg: true
+    ready:
+    - port: 7447
+    timeout: 20
+  - id: launch
+    title: ros2 launch turtlebot3_gazebo
+    run:
+      cmd: bash ${HOME}/.roshub/tools/ensure_built.sh ${HOME}/roshub_ws/turtlebot3_simulations
+        && source ${HOME}/roshub_ws/turtlebot3_simulations/install/setup.bash
+        && ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+      bg: true
+    timeout: 1800
+    ready:
+    - hz: /clock
+      min_hz: 1

@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: ros:jazzy
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install test tools
+        run: apt-get update -q && apt-get install -y -q python3-pytest python3-yaml curl git
+      - name: Unit tests
+        run: python3 -m pytest -q roshub/tests
+      - name: Shell syntax
+        run: for f in install.sh tools/*.sh roshub/tools/*.sh; do bash -n "$f"; done
+      - name: Fresh install smoke test
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          tools/ci_smoke.sh

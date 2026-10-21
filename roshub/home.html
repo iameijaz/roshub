@@ -1,0 +1,916 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROSHub</title>
+<style>
+:root {
+  --bg: #F4F6F5; --panel: #FFFFFF; --ink: #17201E; --muted: #5D6B68; --line: #DCE3E1;
+  --accent: #1F6F5C; --accent-ink: #FFFFFF; --ok: #1E7F4F; --warn: #A86A00; --bad: #B4322A; --run: #2B66C9;
+  --chip: #EAF0EE; --star: #D99A00; --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, "Segoe UI", sans-serif; }
+a { color: var(--accent); }
+button, select, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 7px 13px; }
+button:hover { border-color: #AFC0BB; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+button.danger { color: var(--bad); }
+button.ghost { border-color: transparent; background: transparent; padding: 4px 8px; }
+button:disabled { opacity: .5; cursor: default; }
+select, input, textarea { border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; background: #fff; }
+:focus-visible { outline: 3px solid #7FB8A8; outline-offset: 1px; }
+header.top { display: flex; align-items: center; gap: 16px; padding: 12px 24px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+.brand { font-weight: 800; font-size: 19px; letter-spacing: .2px; text-decoration: none; color: var(--ink); }
+.brand span { color: var(--accent); }
+nav.tabs { display: flex; gap: 4px; }
+nav.tabs a { text-decoration: none; color: var(--muted); padding: 6px 12px; border-radius: 7px; }
+nav.tabs a.on { background: var(--chip); color: var(--ink); font-weight: 600; }
+.grow { flex: 1; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 24px 60px; }
+h1 { font-size: 24px; margin: 0 0 4px; }
+h2 { font-size: 17px; margin: 26px 0 10px; }
+.sub { color: var(--muted); margin: 0 0 14px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+.toolbar input[type=search] { flex: 1 1 240px; }
+.bookmarks { display: flex; flex-wrap: wrap; gap: 8px; }
+.bm { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); text-decoration: none; color: var(--ink); font-weight: 600; }
+.bm::before { content: "★"; color: var(--star); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.card.archived { opacity: .7; }
+.card .head { display: flex; align-items: start; gap: 8px; }
+.card .name { font-weight: 700; font-size: 16px; text-decoration: none; color: var(--ink); word-break: break-word; }
+.card .desc { color: var(--muted); font-size: 14px; flex: 1; }
+.badges { display: flex; flex-wrap: wrap; gap: 5px; }
+.badge { background: var(--chip); border-radius: 5px; padding: 1px 7px; font-size: 12.5px; color: #33423F; }
+.badge.mode-prototype { background: #FFF1D6; }
+.card .foot { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.star { font-size: 18px; line-height: 1; color: #B7C3C0; }
+.star.on { color: var(--star); }
+details.archive summary { cursor: pointer; color: var(--muted); margin: 22px 0 10px; }
+.empty { color: var(--muted); padding: 18px; background: var(--panel); border: 1px dashed var(--line); border-radius: 10px; }
+
+/* project page */
+.phead { display: flex; flex-wrap: wrap; gap: 14px; align-items: start; }
+.phead .grow { min-width: 260px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.actions .primary { font-size: 16px; padding: 10px 20px; }
+.banner { margin: 18px 0; padding: 14px 18px; border-radius: 10px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.banner.ready { background: #E3F4EA; border: 1px solid #A8D9BC; }
+.banner.failed { background: #FBE9E7; border: 1px solid #EBB9B3; }
+.banner.running { background: #E8EFFB; border: 1px solid #B9CBEE; }
+.banner .big { font-weight: 700; font-size: 17px; }
+.stages { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.stage { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; border-left: 5px solid var(--line); }
+.stage.passed, .stage.reused { border-left-color: var(--ok); }
+.stage.failed { border-left-color: var(--bad); }
+.stage.waiting, .stage.starting { border-left-color: var(--run); }
+.stage.skipped { border-left-color: #B7C3C0; opacity: .75; }
+.stage .row1 { display: flex; align-items: center; gap: 10px; }
+.stage .icon { width: 22px; text-align: center; font-weight: 800; }
+.stage .title { font-weight: 650; flex: 1; }
+.stage .state { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stage .msg { margin: 6px 0 0 32px; color: var(--muted); font-size: 14px; }
+.stage .manual { margin: 8px 0 0 32px; padding: 8px 12px; background: #FFF7E0; border-radius: 7px; font-weight: 600; }
+.stage .checks { margin: 6px 0 0 32px; padding: 0; list-style: none; font-size: 13.5px; }
+.stage .checks li { display: flex; gap: 8px; }
+.stage .hint { margin: 8px 0 0 32px; font-size: 13.5px; color: #6B4E00; }
+.stage .tools { margin: 8px 0 0 32px; display: flex; gap: 6px; flex-wrap: wrap; }
+.stage pre, .out { margin: 8px 0 0; background: #101615; color: #D9E4E1; border-radius: 8px; padding: 10px 12px; font: 12.5px/1.45 var(--mono); max-height: 320px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+.ok { color: var(--ok); } .bad { color: var(--bad); } .run { color: var(--run); } .mut { color: var(--muted); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { display: inline-block; animation: spin 1.2s linear infinite; }
+.sect { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-top: 14px; }
+.ws { margin-bottom: 12px; }
+.ws summary { cursor: pointer; font-weight: 650; }
+.pkg { display: grid; grid-template-columns: 220px 1fr; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.pkg code, code { font-family: var(--mono); font-size: 12.5px; background: var(--chip); padding: 1px 5px; border-radius: 4px; }
+dialog { border: none; border-radius: 12px; padding: 0; max-width: 560px; width: calc(100% - 32px); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+dialog::backdrop { background: rgba(16, 24, 22, .45); }
+dialog .in { padding: 20px 22px; }
+dialog h3 { margin: 0 0 10px; font-size: 18px; }
+dialog .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.form { display: grid; grid-template-columns: 140px 1fr; gap: 10px 12px; align-items: center; }
+.form label { color: var(--muted); font-size: 14px; }
+.form .full { grid-column: 1 / -1; }
+.toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #17201E; color: #fff; padding: 9px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.on { opacity: 1; }
+@media (max-width: 640px) {
+  header.top { padding: 10px 16px; flex-wrap: wrap; } main { padding: 16px; }
+  .pkg { grid-template-columns: 1fr; } .form { grid-template-columns: 1fr; }
+}
+</style>
+
+<style>/* roshub-backlink: back links as buttons */
+#view > p:first-child { margin: 0 0 14px; }
+#view > p:first-child > a[href^="#/"] {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--card, #fff); color: var(--ink); font-weight: 500; font-size: 14px;
+  border: 1px solid var(--line, #d0d7de); text-decoration: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05); transition: background .15s, border-color .15s;
+}
+#view > p:first-child > a[href^="#/"]:hover { background: var(--chip); border-color: var(--muted); }
+#view > p:first-child > a[href^="#/"]:focus-visible { outline: 2px solid var(--accent, #0a8fb3); outline-offset: 2px; }
+</style>
+<style>/* roshub-cardfoot: consistent card actions */
+.card .foot { display: flex; align-items: center; gap: 6px; }
+.card .foot button { height: 32px; padding: 0 12px; border-radius: 7px; font-size: 13px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.card .foot button.ghost, .card .foot .danger-ghost { background: transparent; border: 1px solid transparent; color: var(--muted); }
+.card .foot button.ghost:hover { background: var(--chip); color: var(--ink); }
+.card .foot .danger-ghost { color: #cf222e; }
+.card .foot .danger-ghost:hover { background: rgba(207,34,46,.08); border-color: rgba(207,34,46,.35); }
+.card .foot a > button { background: var(--accent, #1f6f5c); color: #fff; border: 1px solid transparent; font-weight: 600; }
+.card .foot a > button:hover { filter: brightness(1.08); }
+.card .foot button:focus-visible { outline: 2px solid var(--accent, #1f6f5c); outline-offset: 2px; }
+</style>
+<!-- roshub-icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f6f5c'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%23fff'/%3E%3Cg stroke='%23fff' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M32 25V12M32 39v13M25 32H12M39 32h13'/%3E%3C/g%3E%3Cg fill='%23fff'%3E%3Ccircle cx='32' cy='11' r='4'/%3E%3Ccircle cx='32' cy='53' r='4'/%3E%3Ccircle cx='11' cy='32' r='4'/%3E%3Ccircle cx='53' cy='32' r='4'/%3E%3C/g%3E%3C/svg%3E">
+<style>i.rh-ic { margin-right: 6px; font-size: .95em; opacity: .9 } nav.tabs a i.rh-ic { margin-right: 5px }</style>
+<style>/* roshub-card2: tidy project cards */
+.cards .card { display: flex; flex-direction: column; transition: box-shadow .15s, transform .15s; }
+.cards .card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.07); transform: translateY(-1px); }
+.cards .card .badges { margin-bottom: 4px; }
+.card .foot { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line, #eaeef2); }
+.card .foot .grow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; color: var(--muted); min-width: 0; }
+.card .foot [data-arch], .card .foot [data-del] { font-size: 0; width: 32px; padding: 0; justify-content: center; }
+.card .foot [data-arch] i.rh-ic, .card .foot [data-del] i.rh-ic { font-size: 14px; margin: 0; }
+</style>
+<style>/* roshub-wsui */
+.wscards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.wscard { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; }
+.wscard .path { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wsstats { display: flex; gap: 14px; font-size: 13px; color: var(--muted); }
+.wsstats b { color: var(--ink); }
+.wsrow { display: grid; grid-template-columns: minmax(160px, 220px) 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line, #eaeef2); }
+.scen { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 7px; }
+.scen:hover { background: var(--chip); }
+.scen code { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scen button { height: 28px; padding: 0 10px; font-size: 12px; }
+.wsproj { display: flex; flex-wrap: wrap; gap: 8px; }
+.wsproj a { padding: 6px 12px; border-radius: 8px; background: var(--card, #fff); border: 1px solid var(--line, #d0d7de); text-decoration: none; color: var(--ink); font-weight: 500; }
+.wsproj a:hover { background: var(--chip); }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/">ROS<span>Hub</span></a>
+  <nav class="tabs" aria-label="Sections">
+    <a href="#/" data-tab="home">Projects</a>
+    <a href="#/workspaces" data-tab="workspaces">Workspaces</a>
+    <a href="#/diagnostics" data-tab="diagnostics">Diagnostics</a>
+  </nav>
+  <span class="grow"></span>
+</header>
+<main id="view" aria-live="polite"></main>
+
+<dialog id="prepDlg" aria-labelledby="prepTitle">
+  <div class="in">
+    <h3 id="prepTitle">Before we start</h3>
+    <p id="prepText"></p>
+    <label><input type="checkbox" id="prepSkip"> Don't show this again for this project</label>
+    <div class="btns"><button id="prepCancel">Cancel</button><button class="primary" id="prepGo">It's ready, start</button></div>
+  </div>
+</dialog>
+
+<dialog id="newDlg" aria-labelledby="newTitle">
+  <form class="in" method="dialog" id="newForm">
+    <h3 id="newTitle">New project</h3>
+    <fieldset id="imp" class="imp" style="border:1px solid var(--line, #ddd);border-radius:8px;padding:10px 12px;margin:6px 0 12px">
+      <legend style="padding:0 4px">Start from</legend>
+      <label><input type="radio" name="imp_src" value="github" checked> GitHub URL</label>
+      <label style="margin-left:12px"><input type="radio" name="imp_src" value="folder"> Folder</label>
+      <label style="margin-left:12px"><input type="radio" name="imp_src" value="blank"> Blank</label>
+      <div id="impRow" style="display:flex;gap:8px;margin-top:8px">
+        <input id="impVal" aria-label="GitHub URL or folder" style="flex:1" placeholder="https://github.com/owner/repo  (optional /tree/branch)">
+        <button type="button" id="impGo">Fetch</button>
+      </div>
+      <div id="impMsg" role="status" aria-live="polite" style="margin-top:6px;font-size:13px"></div>
+    </fieldset>
+    <div class="form">
+      <label for="nf-name">Name</label><input id="nf-name" name="name" required pattern="[A-Za-z0-9_ ]+" placeholder="husky_outdoor_nav">
+      <label for="nf-desc">Description</label><input id="nf-desc" name="description" placeholder="What this project runs">
+      <label for="nf-robot">Robot</label><input id="nf-robot" name="robot" placeholder="Husky, TurtleBot3, TIAGo…">
+      <label for="nf-type">Project type</label><select id="nf-type" name="project_type"></select>
+      <label for="nf-sim">Simulator</label><select id="nf-sim" name="simulator"></select>
+      <label for="nf-rmw">Middleware</label><select id="nf-rmw" name="rmw"></select>
+      <label for="nf-mode">Mode</label><select id="nf-mode" name="mode">
+        <option value="robust">Robust: launch files with readiness checks</option>
+        <option value="prototype">Quick prototype: run commands, no checks</option></select>
+      <label for="nf-ws">Workspace</label><input id="nf-ws" name="workspace" placeholder="~/ros2_ws">
+      <label for="nf-launch">Main launch</label><input id="nf-launch" name="launch" placeholder="my_pkg sim.launch.py use_sim_time:=true">
+      <label for="nf-dash">Dashboard</label><input id="nf-dash" name="dashboard_url" placeholder="Optional: http://localhost:8095  or a command, e.g. rviz2 -d ~/my.rviz" title="A URL becomes a link. Anything else runs as the last step after the launch.">
+      <label for="nf-prep">Before start</label><textarea id="nf-prep" name="prepare" rows="2" placeholder="Shown when you press Start, e.g. 'Open Isaac Sim, don't press Play yet'"></textarea>
+      <label for="nf-tags">Tags</label><input id="nf-tags" name="tags" placeholder="nav2, outdoor">
+    </div>
+    <p class="bad" id="newErr" role="alert"></p>
+    <div class="btns"><button value="cancel" formnovalidate>Cancel</button><button class="primary" id="newGo" value="ok">Create</button></div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const LABEL = { single_robot: "Single robot", fleet: "Fleet", manipulator: "Manipulator", mobile_manipulator: "Mobile manipulator",
+  isaac_sim: "Isaac Sim", gazebo: "Gazebo", none: "Real hardware", other: "Other",
+  rmw_zenoh_cpp: "Zenoh", rmw_fastrtps_cpp: "Fast DDS", rmw_cyclonedds_cpp: "Cyclone DDS", robust: "Robust", prototype: "Prototype" };
+const lab = (v) => LABEL[v] || v;
+let LIB = null, poll = null;
+const filt = { q: "", robot: "", project_type: "", simulator: "", rmw: "" };
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error(`${path}: HTTP ${r.status}`);
+  return r.json();
+}
+const post = (path, body) => api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+function toast(t) { const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove("on"), 2200); }
+function ago(t) {
+  if (!t) return "never opened";
+  const s = Date.now() / 1000 - t;
+  if (s < 90) return "just now"; if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `${Math.round(s / 3600)} h ago`; return `${Math.round(s / 86400)} d ago`;
+}
+
+/* ------------------------------------------------------------------ router */
+async function route() {
+  clearInterval(poll); poll = null;
+  const h = location.hash.slice(1) || "/";
+  const tab = h.startsWith("/workspaces") ? "workspaces" : h.startsWith("/diagnostics") ? "diagnostics" : "home";
+  for (const a of document.querySelectorAll("nav.tabs a")) a.classList.toggle("on", a.dataset.tab === tab && !h.startsWith("/p/"));
+  try {
+    if (h.startsWith("/p/")) return await projectView(decodeURIComponent(h.slice(3)));
+    if (tab === "workspaces") return await workspacesView();
+    if (tab === "diagnostics") { if (!LIB) LIB = await api("/api/hub/library"); return diagnosticsView(); }
+    return await homeView();
+  } catch (e) {
+    $("#view").innerHTML = `<div class="empty bad">Could not reach the ROSHub server: ${esc(e.message)}. Is <code>ui_server.py</code> running?</div>`;
+  }
+}
+window.addEventListener("hashchange", route);
+
+/* ------------------------------------------------------------------ home */
+async function homeView() {
+  LIB = await api("/api/hub/library");
+  const v = $("#view");
+  const bms = LIB.projects.filter((p) => p.bookmarked && !p.archived);
+  const sel = (k, title) => `<select data-f="${k}" aria-label="${title}"><option value="">${title}: all</option>${
+    LIB.facets[k].map((x) => `<option value="${esc(x)}" ${filt[k] === x ? "selected" : ""}>${esc(lab(x))}</option>`).join("")}</select>`;
+  v.innerHTML = `
+    <h1>Projects</h1>
+    <p class="sub">Recently used first. Star a project to pin it here; archived ones sit at the bottom.</p>
+    ${bms.length ? `<div class="bookmarks" aria-label="Bookmarks">${bms.map((p) => `<a class="bm" href="#/p/${encodeURIComponent(p.name)}">${esc(p.name)}</a>`).join("")}</div>` : ""}
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="Search projects, robots, tags…" value="${esc(filt.q)}" aria-label="Search projects">
+      ${sel("robot", "Robot")}${sel("project_type", "Type")}${sel("simulator", "Simulator")}${sel("rmw", "Middleware")}
+      <button class="primary" id="newBtn">+ New project</button>
+    </div>
+    <div class="cards" id="cards"></div>
+    <details class="archive" id="arch"><summary>Archived</summary><div class="cards" id="archCards"></div></details>`;
+  $("#q").oninput = (e) => { filt.q = e.target.value.toLowerCase(); drawCards(); };
+  for (const s of v.querySelectorAll("select[data-f]")) s.onchange = (e) => { filt[e.target.dataset.f] = e.target.value; drawCards(); };
+  $("#newBtn").onclick = openNew;
+  drawCards();
+}
+
+function matches(p) {
+  for (const k of ["robot", "project_type", "simulator", "rmw"]) if (filt[k] && p.meta[k] !== filt[k]) return false;
+  if (!filt.q) return true;
+  return [p.name, p.description, p.meta.robot, ...(p.meta.tags || [])].join(" ").toLowerCase().includes(filt.q);
+}
+
+function card(p) {
+  const m = p.meta;
+  return `<article class="card ${p.archived ? "archived" : ""}">
+    <div class="head">
+      <a class="name grow" href="#/p/${encodeURIComponent(p.name)}">${esc(p.name)}</a>
+      <button class="ghost star ${p.bookmarked ? "on" : ""}" data-bm="${esc(p.name)}" aria-pressed="${p.bookmarked}" title="${p.bookmarked ? "Remove bookmark" : "Bookmark"}" aria-label="Bookmark ${esc(p.name)}">★</button>
+    </div>
+    <div class="desc">${esc(p.description)}</div>
+    <div class="badges">
+      <span class="badge">${esc(m.robot)}</span><span class="badge">${esc(lab(m.project_type))}</span>
+      <span class="badge">${esc(lab(m.simulator))}</span><span class="badge">${esc(lab(m.rmw))}</span>
+      <span class="badge mode-${esc(m.mode)}">${esc(lab(m.mode))}</span>
+      ${(m.tags || []).map((t) => `<span class="badge">#${esc(t)}</span>`).join("")}
+    </div>
+    <div class="foot"><span class="grow">${esc(ago(Math.max(p.opened, p.started)))} · ${p.stages} steps</span>
+      <button class="ghost" data-arch="${esc(p.name)}" data-v="${p.archived ? 0 : 1}">${p.archived ? "Restore" : "Archive"}</button>
+      <a href="#/p/${encodeURIComponent(p.name)}"><button>Open</button></a></div>
+  </article>`;
+}
+
+function drawCards() {
+  const act = LIB.projects.filter((p) => !p.archived && matches(p));
+  const arc = LIB.projects.filter((p) => p.archived && matches(p));
+  $("#cards").innerHTML = act.map(card).join("") || `<div class="empty">No projects match. Clear a filter, or create one with “New project”.</div>`;
+  $("#archCards").innerHTML = arc.map(card).join("") || `<div class="mut">Nothing archived.</div>`;
+  $("#arch").hidden = !LIB.projects.some((p) => p.archived);
+  for (const b of document.querySelectorAll("[data-bm]")) b.onclick = async () => {
+    const p = LIB.projects.find((x) => x.name === b.dataset.bm);
+    await api(`/api/hub/state?action=bookmark&project=${encodeURIComponent(p.name)}&value=${p.bookmarked ? 0 : 1}`);
+    homeView();
+  };
+  for (const b of document.querySelectorAll("[data-arch]")) b.onclick = async () => {
+    await api(`/api/hub/state?action=archive&project=${encodeURIComponent(b.dataset.arch)}&value=${b.dataset.v}`);
+    homeView();
+  };
+}
+
+function openNew() {
+  const fill = (id, key, def) => { $(id).innerHTML = LIB.choices[key].map((x) => `<option value="${x}" ${x === def ? "selected" : ""}>${esc(lab(x))}</option>`).join(""); };
+  fill("#nf-type", "project_type", "single_robot"); fill("#nf-sim", "simulator", "isaac_sim"); fill("#nf-rmw", "rmw", "rmw_zenoh_cpp");
+  $("#newErr").textContent = "";
+  $("#newDlg").showModal();
+}
+$("#newForm").addEventListener("submit", async (e) => {
+  if (e.submitter && e.submitter.value === "cancel") return;
+  e.preventDefault();
+  const body = Object.fromEntries(new FormData(e.target).entries());
+  const r = await post("/api/hub/new", body);
+  if (!r.ok) { $("#newErr").textContent = r.error || (r.issues || []).map((i) => `${i.where}: ${i.msg}`).join("; "); return; }
+  $("#newDlg").close(); e.target.reset();
+  toast(`Created ${r.name}`); location.hash = `#/p/${encodeURIComponent(r.name)}`;
+});
+
+/* ------------------------------------------------------------------ project */
+const ICON = { passed: ["✓", "ok"], reused: ["✓", "ok"], failed: ["✕", "bad"], skipped: ["–", "mut"], pending: ["○", "mut"],
+  waiting: ["◌", "run spin"], starting: ["◌", "run spin"] };
+const openLogs = new Set();
+const fixOut = {};                 // stage id -> last fix output (survives the 1.5 s redraw)
+
+async function projectView(name) {
+  if (!LIB) LIB = await api("/api/hub/library");
+  const p = LIB.projects.find((x) => x.name === name);
+  if (!p) { $("#view").innerHTML = `<div class="empty">No project called <b>${esc(name)}</b>. <a href="#/">Back to projects</a></div>`; return; }
+  api(`/api/hub/state?action=opened&project=${encodeURIComponent(name)}`);
+  const m = p.meta;
+  $("#view").innerHTML = `
+    <p><a href="#/">← Projects</a></p>
+    <div class="phead">
+      <div class="grow"><h1>${esc(name)}</h1><p class="sub">${esc(p.description)}</p>
+        <div class="badges"><span class="badge">${esc(m.robot)}</span><span class="badge">${esc(lab(m.project_type))}</span>
+          <span class="badge">${esc(lab(m.simulator))}</span><span class="badge">${esc(lab(m.rmw))}</span>
+          <span class="badge mode-${esc(m.mode)}">${esc(lab(m.mode))}</span>${m.workspace ? `<span class="badge">${esc(m.workspace)}</span>` : ""}</div></div>
+      <div class="actions">
+        <button class="primary" id="startBtn">▶ Start</button>
+        <button class="danger" id="stopBtn">■ Stop all</button>
+        <button id="diagBtn">Diagnostics</button>
+      </div>
+    </div>
+    <div id="banner"></div>
+    <h2>Bring-up</h2>
+    <ol class="stages" id="stages"><li class="mut">Loading…</li></ol>`;
+  $("#startBtn").onclick = () => startFlow(p);
+  $("#stopBtn").onclick = async () => {
+    await api(`/api/runbook/stop?project=${encodeURIComponent(name)}&kill=1`);
+    toast("Stopping everything this project started…");
+  };
+  $("#diagBtn").onclick = () => { location.hash = "#/diagnostics"; DIAG_PROJECT = name; };
+  DIAG_PROJECT = name;
+  const tick = async () => {
+    try { drawRunbook(p, await api(`/api/runbook?project=${encodeURIComponent(name)}`)); } catch (e) { /* server restarting */ }
+  };
+  await tick();
+  poll = setInterval(tick, 1500);
+}
+
+function startFlow(p) {
+  const go = async (from) => {
+    const r = await api(`/api/runbook/start?project=${encodeURIComponent(p.name)}${from ? "&from=" + encodeURIComponent(from) : ""}`);
+    if (!r.ok) toast("Already running: stop it first, or retry a single step");
+  };
+  if (!p.meta.prepare || p.skip_prepare) return go();
+  $("#prepText").textContent = p.meta.prepare;
+  $("#prepSkip").checked = false;
+  $("#prepDlg").showModal();
+  $("#prepCancel").onclick = () => $("#prepDlg").close();
+  $("#prepGo").onclick = async () => {
+    $("#prepDlg").close();
+    if ($("#prepSkip").checked) {
+      await api(`/api/hub/state?action=skip_prepare&project=${encodeURIComponent(p.name)}&value=1`);
+      p.skip_prepare = true;
+    }
+    go();
+  };
+}
+window.retryFrom = (proj, id) => api(`/api/runbook/start?project=${encodeURIComponent(proj)}&from=${encodeURIComponent(id)}`).then((r) => { if (!r.ok) toast("Stop the run first"); });
+window.skipStage = (proj, id) => api(`/api/runbook/skip?project=${encodeURIComponent(proj)}&id=${encodeURIComponent(id)}`);
+window.toggleLog = async (proj, id, file) => {
+  if (openLogs.has(id)) openLogs.delete(id); else openLogs.add(id);
+  const box = document.getElementById("log-" + id);
+  if (box) box.hidden = !openLogs.has(id);
+  if (openLogs.has(id)) await fillLog(id, file);
+};
+async function fillLog(id, file) {
+  const box = document.getElementById("log-" + id);
+  if (!box || !file) return;
+  const r = await api(`/api/runbook/log?file=${encodeURIComponent(file)}&lines=80`);
+  const atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 20;
+  box.textContent = r.content.replace(/\x1b\[[0-9;]*[A-Za-z]/g, "") || "(empty so far)";
+  if (atEnd) box.scrollTop = box.scrollHeight;
+}
+window.runFix = async (proj, id, i, btn) => {
+  btn.disabled = true; const old = btn.textContent; btn.textContent = "Running…";
+  const r = await post("/api/hub/fix", { project: proj, stage: id, index: i });
+  btn.disabled = false; btn.textContent = old;
+  fixOut[id] = (r.ok ? "✓ done\n" : "✕ failed\n") + (r.output || "");
+  const out = document.getElementById("fix-" + id);
+  if (out) { out.hidden = false; out.textContent = fixOut[id]; }
+};
+
+function drawRunbook(p, rb) {
+  const name = p.name, st = rb.state, stages = rb.stages || [];
+  const failed = stages.find((s) => s.state === "failed");
+  const allOk = stages.length && stages.every((s) => ["passed", "reused", "skipped"].includes(s.state));
+  let ban = "";
+  if (!rb.defined) ban = `<div class="banner failed"><span class="big">This project has no bring-up steps yet.</span> Add a <code>runbook:</code> to its YAML in <code>~/.roshub/projects/</code>.</div>`;
+  else if (allOk && st !== "stopped") ban = `<div class="banner ready"><span class="big">✓ Everything is up and checked. Go!</span><span class="grow"></span>${p.meta.dashboard_url ? `<a href="${esc(p.meta.dashboard_url)}" target="_blank" rel="noopener"><button class="primary">Open dashboard ↗</button></a>` : ""}</div>`;
+  else if (st === "running") { const cur = stages.find((s) => s.id === rb.current); ban = `<div class="banner running"><span class="big"><span class="spin">◌</span> Starting… ${cur ? esc(cur.title) : ""}</span></div>`; }
+  else if (failed) ban = `<div class="banner failed"><span class="big">✕ Stopped at “${esc(failed.title)}”.</span> <span>${esc(failed.message)}</span><span class="grow"></span><button onclick="retryFrom('${esc(name)}','${esc(failed.id)}')">Retry this step</button><button onclick="location.hash='#/diagnostics'">Diagnose</button></div>`;
+  $("#banner").innerHTML = ban;
+  $("#startBtn").disabled = st === "running";
+  $("#startBtn").textContent = st === "running" ? "Starting…" : allOk ? "↻ Restart" : "▶ Start";
+  $("#stages").innerHTML = stages.map((s) => {
+    const [ic, cls] = ICON[s.state] || ["○", "mut"];
+    const live = ["waiting", "starting"].includes(s.state);
+    const checks = (s.checks || []).map((c) => `<li><span class="${c.ok === true ? "ok" : c.ok === false ? "bad" : "mut"}">${c.ok === true ? "✓" : c.ok === false ? "✕" : "·"}</span><span>${esc(c.desc)}</span><span class="mut">${esc(c.summary)}</span></li>`).join("");
+    const fixes = (live || s.state === "failed" ? s.fixes || [] : []).map((f, i) => `<button onclick="runFix('${esc(name)}','${esc(s.id)}',${i},this)">🛠 ${esc(f.label)}</button>`).join("");
+    const elapsed = s.elapsed != null ? `${Math.round(s.elapsed)} s${live ? ` / ${Math.round(s.timeout)} s` : ""}` : "";
+    return `<li class="stage ${esc(s.state)}">
+      <div class="row1"><span class="icon ${cls}">${ic}</span><span class="title">${esc(s.title)}</span>
+        <span class="state">${esc(s.state === "reused" ? "already running" : s.state)} ${elapsed}</span></div>
+      ${s.manual && live ? `<div class="manual">👉 ${esc(s.manual)}</div>` : ""}
+      ${s.message && !(s.manual && live) ? `<div class="msg">${esc(s.message)}</div>` : ""}
+      ${checks ? `<ul class="checks">${checks}</ul>` : ""}
+      ${s.hint && (s.state === "failed" || live) ? `<div class="hint">💡 ${esc(s.hint)}</div>` : ""}
+      <div class="tools">${fixes}
+        ${s.log ? `<button onclick="toggleLog('${esc(name)}','${esc(s.id)}','${esc(s.log)}')">${openLogs.has(s.id) ? "Hide" : "Show"} log</button>` : ""}
+        ${["failed", "skipped", "passed", "reused"].includes(s.state) && st !== "running" ? `<button onclick="retryFrom('${esc(name)}','${esc(s.id)}')">Run from here</button>` : ""}
+        ${live || s.state === "failed" ? `<button class="ghost" onclick="skipStage('${esc(name)}','${esc(s.id)}')">Skip</button>` : ""}
+      </div>
+      <pre id="fix-${esc(s.id)}" ${fixOut[s.id] ? "" : "hidden"}>${esc(fixOut[s.id] || "")}</pre>
+      <pre id="log-${esc(s.id)}" ${openLogs.has(s.id) ? "" : "hidden"}></pre>
+    </li>`;
+  }).join("") || `<li class="mut">No steps.</li>`;
+  for (const s of stages) if (openLogs.has(s.id)) fillLog(s.id, s.log);
+}
+
+/* ------------------------------------------------------------------ workspaces */
+async function workspacesView() {
+  $("#view").innerHTML = `<h1>Workspaces</h1><p class="sub">colcon workspaces found under your home folder, most recently changed first. ROSHub only reads them.</p><div id="wsl" class="mut">Scanning…</div>`;
+  const { workspaces } = await api("/api/hub/workspaces");
+  $("#wsl").innerHTML = workspaces.map((w, i) => {
+    const stale = w.packages.filter((p) => p.stale).length, unbuilt = w.packages.filter((p) => !p.built).length;
+    return `<details class="sect ws" ${i === 0 ? "open" : ""}><summary>${esc(w.name)} <span class="mut">· ${esc(w.path)} · ${w.packages.length} packages
+      ${stale ? ` · <span class="bad">${stale} changed since last build</span>` : ""}${unbuilt ? ` · ${unbuilt} not built` : ""}</span></summary>
+      ${w.packages.map((p) => `<div class="pkg"><div><b>${esc(p.name)}</b><br>
+        ${p.stale ? `<span class="bad">source newer than install</span>` : p.built ? `<span class="ok">built</span>` : `<span class="mut">not built</span>`}
+        ${p.stale || !p.built ? `<br><code>colcon build --packages-select ${esc(p.name)}</code>` : ""}</div>
+        <div>${p.launch.length ? p.launch.map((l) => `<code>${esc(l)}</code>`).join(" ") : `<span class="mut">no launch files</span>`}</div></div>`).join("")}
+    </details>`;
+  }).join("") || `<div class="empty">No workspaces with a <code>src/</code> folder found.</div>`;
+}
+
+/* ------------------------------------------------------------------ diagnostics */
+let DIAG_PROJECT = "";
+function diagnosticsView() {
+  const projOpts = (LIB ? LIB.projects : []).map((p) => `<option ${p.name === DIAG_PROJECT ? "selected" : ""}>${esc(p.name)}</option>`).join("");
+  $("#view").innerHTML = `
+    <h1>Diagnostics</h1>
+    <p class="sub">Check the bridge and the stack, and build a report you can paste into an LLM or attach to a GitHub issue.</p>
+    <div class="sect"><h2 style="margin-top:0">Doctor</h2>
+      <p class="mut">Quick: router, Windows side, environment, running processes (~5 s). Deep: also the ROS graph, sensor rates, TF, AMCL, Nav2 parameters, RMF (~25 s).</p>
+      <div class="toolbar"><button class="primary" id="dQuick">Run quick check</button><button id="dDeep">Run deep check</button></div>
+      <pre class="out" id="dOut" hidden></pre></div>
+    <div class="sect"><h2 style="margin-top:0">Report for an LLM or a GitHub issue</h2>
+      <p class="mut">System (OS, WSL, CPU, RAM, GPU and driver), ROS and package versions, Isaac and Zenoh config, the project's YAML and bring-up state, logs of failing steps, and the doctor result. Home paths, e-mails and secrets are masked.</p>
+      <div class="toolbar"><label for="rProj">Project</label><select id="rProj"><option value="">(system only)</option>${projOpts}</select>
+        <button class="primary" id="rGo">Generate report</button><button id="rCopy" disabled>Copy</button><a id="rDl" hidden><button>Download .md</button></a></div>
+      <pre class="out" id="rOut" hidden></pre></div>`;
+  const doc = async (deep, btn) => {
+    btn.disabled = true; const o = $("#dOut"); o.hidden = false; o.textContent = deep ? "Running deep check (~25 s)…" : "Running quick check…";
+    try { const r = await api(`/api/hub/doctor?deep=${deep ? 1 : 0}`); o.textContent = r.output; } catch (e) { o.textContent = e.message; }
+    btn.disabled = false;
+  };
+  $("#dQuick").onclick = (e) => doc(false, e.target);
+  $("#dDeep").onclick = (e) => doc(true, e.target);
+  $("#rGo").onclick = async (e) => {
+    e.target.disabled = true; const o = $("#rOut"); o.hidden = false; o.textContent = "Collecting… (runs the quick doctor too)";
+    try {
+      const r = await api(`/api/hub/report?project=${encodeURIComponent($("#rProj").value)}`);
+      o.textContent = r.text; $("#rCopy").disabled = false;
+      $("#rDl").href = `/api/hub/report_file?name=${encodeURIComponent(r.name)}`; $("#rDl").hidden = false;
+      toast(`Saved to ~/.roshub/diag/${r.name}`);
+    } catch (err) { o.textContent = err.message; }
+    e.target.disabled = false;
+  };
+  $("#rCopy").onclick = async () => {
+    try { await navigator.clipboard.writeText($("#rOut").textContent); toast("Copied"); }
+    catch (err) { const r = document.createRange(); r.selectNodeContents($("#rOut")); getSelection().removeAllRanges(); getSelection().addRange(r); toast("Selected: press Ctrl+C"); }
+  };
+}
+
+route();
+</script>
+
+<script>/* roshub-move-card: "Can it move?" card on each project page */
+(() => {
+  const inner = projectView;
+  projectView = async function (name) {
+    await inner(name);
+    if (LIB && !LIB.projects.some((x) => x.name === name)) {        // just created: list was stale
+      LIB = await api("/api/hub/library");
+      if (LIB.projects.some((x) => x.name === name)) await inner(name);
+    }
+    const view = $("#view");
+    if (!view.querySelector(".phead")) return;                    // not a real project page
+    const put = () => { if (!view.querySelector("#moveCard")) view.insertAdjacentHTML("beforeend", moveCardHtml(name)), wireMoveCard(name); };
+    put();
+    if (view._moveObs) view._moveObs.disconnect();      // views that redraw keep the card
+    view._moveObs = new MutationObserver(() => { if (location.hash.startsWith("#/p/")) put(); });
+    view._moveObs.observe(view, { childList: true });
+  };
+  window.addEventListener("hashchange", () => { const v = $("#view"); if (v && v._moveObs && !location.hash.startsWith("#/p/")) v._moveObs.disconnect(); });
+
+  function saved(name) {
+    const p = (LIB && LIB.projects || []).find((x) => x.name === name);
+    return p && p.meta && p.meta.motion;
+  }
+  function badge(m) {
+    if (!m) return `<span class="badge">not checked yet</span>`;
+    return `<span class="badge">${esc(m.topic)}</span><span class="badge">${esc(m.type)}</span>` +
+      `<span class="badge ${m.verified ? "ok" : ""}">${m.verified ? "✓ verified" : "unconfirmed"}</span>`;
+  }
+  window.moveCardHtml = (name) => `
+    <section class="card" id="moveCard" aria-labelledby="moveTitle" style="margin-top:16px">
+      <div class="head"><h2 id="moveTitle" class="grow" style="margin:0;font-size:16px">Can it move?</h2></div>
+      <div class="desc">Drives slowly (0.1 m/s for 1.5 s, then stops) on the velocity topic that has a subscriber,
+        using the message type it expects, and checks that odometry changed. Start the project first.</div>
+      <div class="badges" id="moveBadges">${badge(saved(name))}</div>
+      <div class="foot"><span class="grow" id="moveMsg" role="status" aria-live="polite"></span>
+        <button class="primary" id="moveBtn">Run move check</button></div>
+      <div id="moveAsk" hidden style="margin-top:10px">
+        <strong>Did the robot visibly move in the simulator?</strong>
+        <button id="moveYes">Yes, it moved</button> <button class="ghost" id="moveNo">No</button>
+      </div>
+    </section>`;
+  window.wireMoveCard = (name) => {
+    const msg = $("#moveMsg"), btn = $("#moveBtn"), ask = $("#moveAsk");
+    btn.onclick = async () => {
+      try {
+        const st = await api("/api/status"), ps = (st.projects || {})[name] || {};
+        const running = (ps.step_states || []).some((x) => x.running) || st.detected === name || st.active_project === name && st.detected;
+        if (!running) { msg.innerHTML = `<span class="bad">Start the project first: nothing of <b>${esc(name)}</b> is running.</span>`; return; }
+      } catch (e) {}
+      btn.disabled = true; ask.hidden = true; msg.textContent = "Checking… keep clear of the robot.";
+      try {
+        const r = await post("/api/hub/motion", { project: name });
+        if (r.ok) {
+          msg.innerHTML = `<span class="ok">✓ Moved ${r.distance_m} m, ${r.rotation_rad} rad</span> · ${esc(r.type.split("/").pop())} on ${esc(r.topic)}`;
+          $("#moveBadges").innerHTML = badge({ topic: r.topic, type: r.type.split("/").pop(), verified: !r.first_run });
+          ask.hidden = !r.first_run;
+        } else {
+          const c = (r.candidates || []).map((x) => x.topic).join(", ");
+          msg.innerHTML = `<span class="bad">✕ ${esc(r.error || "failed")}</span>${c ? ` · candidates: ${esc(c)}` : ""}`;
+        }
+      } catch (e) { msg.innerHTML = `<span class="bad">✕ ${esc(e.message)}</span>`; }
+      btn.disabled = false;
+    };
+    const answer = async (moved) => {
+      const r = await post("/api/hub/motion", { project: name, confirm: moved });
+      ask.hidden = true;
+      if (!r.ok) return toast(r.error || "could not save");
+      LIB = await api("/api/hub/library");
+      $("#moveBadges").innerHTML = badge(saved(name));
+      toast(moved ? "Saved: teleop will use this topic and type" : "Cleared. Check the topic and controller, then run again");
+    };
+    $("#moveYes").onclick = () => answer(true);
+    $("#moveNo").onclick = () => answer(false);
+  };
+})();
+</script>
+
+<script>/* roshub-doctor-project: send the selected Diagnostics project to the doctor */
+(() => {
+  const inner = api;
+  api = function (path, opts) {
+    if (typeof path === "string" && path.startsWith("/api/hub/doctor") && !/[?&]project=/.test(path)) {
+      const sel = document.querySelector("#view select");
+      const proj = (sel && sel.value) || (typeof DIAG_PROJECT !== "undefined" && DIAG_PROJECT) || "";
+      if (proj) path += (path.includes("?") ? "&" : "?") + "project=" + encodeURIComponent(proj);
+    }
+    return inner(path, opts);
+  };
+})();
+</script>
+
+<datalist id="impLaunches"></datalist>
+<script>/* roshub-import-ui: GitHub / folder pre-fill for the New project dialog */
+(() => {
+  const msg = () => $("#impMsg");
+  const src = () => (document.querySelector('input[name="imp_src"]:checked') || {}).value;
+  const setSel = (id, v) => { const s = $(id); if (s && v && [...s.options].some((o) => o.value === v)) s.value = v; };
+  const sync = () => {
+    const s = src();
+    $("#impRow").style.display = s === "blank" ? "none" : "flex";
+    $("#impVal").placeholder = s === "folder" ? "~/my_ws  (workspace, src/, or a package folder)"
+                                             : "https://github.com/owner/repo  (optional /tree/branch)";
+  };
+  document.querySelectorAll('input[name="imp_src"]').forEach((r) => (r.onchange = () => { sync(); msg().textContent = ""; }));
+  $("#nf-launch").setAttribute("list", "impLaunches");
+
+  const fetchIt = async () => {
+    const v = $("#impVal").value.trim();
+    if (!v) { msg().innerHTML = `<span class="bad">Enter a ${src() === "folder" ? "folder" : "GitHub URL"} first.</span>`; return; }
+    const btn = $("#impGo"); btn.disabled = true;
+    msg().textContent = src() === "github" ? "Cloning (shallow)… this can take a minute." : "Scanning folder…";
+    try {
+      const body = src() === "github" ? { source: "github", url: v } : { source: "folder", path: v };
+      const r = await post("/api/hub/import", body);
+      if (!r.ok) { msg().innerHTML = `<span class="bad">✕ ${esc(r.error)}</span>`; return; }
+      const f = r.form, g = r.guess, ws = r.workspace;
+      $("#nf-name").value = (f.name || "").replace(/[^A-Za-z0-9_]/g, "_");
+      $("#nf-desc").value = f.description || "";
+      $("#nf-robot").value = f.robot || "";
+      $("#nf-ws").value = f.workspace || "";
+      $("#nf-launch").value = f.launch || "";
+      setSel("#nf-sim", g.simulator);
+      $("#impLaunches").innerHTML = (g.launch_options || []).map((l) => `<option value="${esc(l)}">`).join("");
+      const miss = r.rosdep_missing;
+      msg().innerHTML = `<span class="ok">✓ ${ws.packages.length} package${ws.packages.length === 1 ? "" : "s"}</span>` +
+        ` · simulator: ${esc(g.simulator)} · robot: ${esc(g.robot_type)} · ${g.launch_options.length} launch files` +
+        (ws.built ? " · built" : ` · <b>not built yet</b>: <code>cd ${esc(ws.path)} && colcon build --symlink-install</code>`) +
+        (miss && miss.length ? `<br><span class="bad">Missing deps:</span> ${esc(miss.join(", "))} → <code>rosdep install --from-paths src --ignore-src -y</code>` : "") +
+        (r.origin ? `<br><span class="mut">from ${esc(r.origin.url)} @ ${esc((r.origin.commit || "").slice(0, 8))}</span>` : "") +
+        `<br>Check the fields below, pick the main launch, then Create.`;
+    } catch (e) { msg().innerHTML = `<span class="bad">✕ ${esc(e.message)}</span>`; }
+    finally { btn.disabled = false; }
+  };
+  $("#impGo").onclick = fetchIt;
+  $("#impVal").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); fetchIt(); } });
+
+  const inner = openNew;
+  openNew = function (preset) {
+    inner();
+    $("#impVal").value = ""; msg().textContent = ""; $("#impLaunches").innerHTML = "";
+    const s = preset && preset.source;
+    document.querySelector(`input[name="imp_src"][value="${s || "github"}"]`).checked = true;
+    sync();
+    if (preset && preset.path) { $("#impVal").value = preset.path; fetchIt(); }
+  };
+  window.openNewFrom = openNew;     // e.g. openNewFrom({source: "folder", path: "~/husky_ws"})
+  $("#newBtn") && ($("#newBtn").onclick = () => openNew());
+})();
+</script>
+
+<script>/* roshub-manage: Delete, Add as project, readable failures */
+(() => {
+  /* --- Delete next to Archive on project cards --- */
+  const drawInner = drawCards;
+  drawCards = function () {
+    drawInner.apply(this, arguments);
+    for (const b of document.querySelectorAll("[data-arch]")) {
+      if (b.nextElementSibling && b.nextElementSibling.dataset && b.nextElementSibling.dataset.del) continue;
+      const name = b.dataset.arch;
+      b.insertAdjacentHTML("afterend", `<button data-del="${esc(name)}" title="Move this project to trash" aria-label="Delete ${esc(name)}" class="danger-ghost">Delete</button>`);
+      b.nextElementSibling.onclick = async () => {
+        const p = (LIB.projects || []).find((x) => x.name === name) || { meta: {} };
+        if (!confirm(`Delete project "${name}"?\n\nIts file moves to ~/.roshub/projects/.trash/ (you can restore it from there).`)) return;
+        const ws = (p.meta && p.meta.workspace) || "";
+        const clone = /\/roshub_ws\//.test(ws) && confirm(`Also move the cloned source folder to trash?\n\n${ws}\n\nCancel keeps it.`);
+        const r = await post("/api/hub/delete", { project: name, remove_clone: clone });
+        if (!r.ok) return toast(r.error || "could not delete");
+        toast(`Deleted ${name}${r.clone ? " · clone " + r.clone : ""}`);
+        homeView();
+      };
+    }
+  };
+
+  /* --- "Add as project" on each workspace --- */
+  const wsInner = workspacesView;
+  workspacesView = async function () {
+    await wsInner.apply(this, arguments);
+    const known = new Set(((LIB && LIB.projects) || []).map((p) => p.meta && p.meta.workspace).filter(Boolean));
+    for (const d of document.querySelectorAll("details.ws")) {
+      const sm = d.querySelector("summary"), m = sm && sm.textContent.match(/·\s*(\/\S+)\s*·/);
+      if (!m || d.querySelector("[data-addws]")) continue;
+      const path = m[1];
+      const used = [...known].some((w) => w.replace(/^~/, "") && path.endsWith(w.replace(/^~/, "")));
+      sm.insertAdjacentHTML("beforeend", ` <button data-addws="${esc(path)}" style="margin-left:8px" ${used ? "class='ghost'" : "class='primary'"}
+        title="Open the New project dialog with this folder">${used ? "+ Another project" : "+ Add as project"}</button>`);
+      sm.querySelector("[data-addws]").onclick = (e) => { e.preventDefault(); e.stopPropagation(); openNewFrom({ source: "folder", path }); };
+    }
+  };
+
+  /* --- readable runbook failures --- */
+  const HINT = {
+    3: "Missing dependencies. Open the log for the install command, run it in a terminal, then press Retry this step.",
+    4: "Build failed. Open the log: the first compiler/CMake error is the real cause.",
+    2: "Workspace folder is wrong or has no src/. Fix the workspace in the project profile.",
+  };
+  const decorate = () => {
+    for (const el of document.querySelectorAll("#view *")) {
+      if (el.children.length || el.dataset.hinted) continue;
+      const m = el.textContent.match(/exited \(code (\d+)\)/);
+      if (m && HINT[m[1]]) {
+        el.dataset.hinted = "1";
+        el.insertAdjacentHTML("afterend", `<div class="bad" style="font-weight:600;margin-top:4px">${HINT[m[1]]}</div>`);
+      }
+    }
+  };
+  new MutationObserver(decorate).observe(document.getElementById("view"), { childList: true, subtree: true });
+})();
+</script>
+
+<script>/* roshub-diag-back: remember the project you came from */
+(() => {
+  let from = "";
+  const pv = projectView;
+  projectView = async function (name) { from = name; return pv.apply(this, arguments); };
+  const dv = diagnosticsView;
+  diagnosticsView = function () {
+    if (from && typeof DIAG_PROJECT !== "undefined" && !DIAG_PROJECT) DIAG_PROJECT = from;
+    const r = dv.apply(this, arguments);
+    if (from) {
+      $("#view").insertAdjacentHTML("afterbegin",
+        `<p><a href="#/p/${encodeURIComponent(from)}">← Back to ${esc(from)}</a></p>`);
+      const sel = $("#view select");
+      if (sel && [...sel.options].some((o) => o.value === from || o.text === from)) sel.value = from;
+    }
+    return r;
+  };
+  window.addEventListener("hashchange", () => {
+    const h = location.hash;
+    if (h === "#/" || h === "" || h.startsWith("#/workspaces")) from = "";   // left the project flow
+  });
+})();
+</script>
+
+<script>/* roshub-icons: Font Awesome icons by label */
+(() => {
+  const MAP = [
+    [/^\+?\s*New project$/i, "fa-plus"], [/^Open$/i, "fa-arrow-right-to-bracket"], [/^Archive$/i, "fa-box-archive"],
+    [/^Restore$/i, "fa-rotate-left"], [/^Delete$/i, "fa-trash-can"], [/^Start$/i, "fa-play"], [/^Restart$/i, "fa-rotate-right"],
+    [/^Stop all$/i, "fa-stop"], [/^Diagnostics$/i, "fa-stethoscope"], [/^Diagnose$/i, "fa-stethoscope"],
+    [/^Run quick check$/i, "fa-bolt"], [/^Run deep check$/i, "fa-magnifying-glass-chart"], [/^Run move check$/i, "fa-person-walking-arrow-right"],
+    [/^Show log$/i, "fa-file-lines"], [/^Hide log$/i, "fa-eye-slash"], [/^Run from here$/i, "fa-forward-step"], [/^Retry this step$/i, "fa-rotate-right"],
+    [/^Skip$/i, "fa-forward"], [/^Fetch$/i, "fa-cloud-arrow-down"], [/^Create$/i, "fa-check"], [/^Cancel$/i, "fa-xmark"],
+    [/^\+ (Add as project|Another project)$/i, "fa-folder-plus"], [/^Yes, it moved$/i, "fa-check"],
+    [/^← /, "fa-arrow-left"], [/^Projects$/, "fa-diagram-project"], [/^Workspaces$/, "fa-folder-tree"],
+  ];
+  const deco = (root) => {
+    for (const el of root.querySelectorAll("button, nav.tabs a, #view > p:first-child > a")) {
+      if (el.querySelector("i.rh-ic, i.fa-solid")) continue;
+      let t = el.textContent.trim().replace(/^[▶↻■✓✕]\s*/, "");
+      const hit = MAP.find(([re]) => re.test(t));
+      if (!hit) continue;
+      if (/^← /.test(t)) t = t.slice(2);
+      for (const n of [...el.childNodes]) if (n.nodeType === 3) n.textContent = n.textContent.replace(/^\s*[▶↻■✓←]\s*/, "");
+      if (/^\+\s/.test(el.textContent.trim())) for (const n of el.childNodes) if (n.nodeType === 3) n.textContent = n.textContent.replace(/^\s*\+\s*/, "");
+      el.insertAdjacentHTML("afterbegin", `<i class="fa-solid ${hit[1]} rh-ic" aria-hidden="true"></i>`);
+    }
+  };
+  deco(document);
+  new MutationObserver(() => deco(document)).observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+<script>/* roshub-card2: tooltips for icon-only actions */
+(() => {
+  const tip = () => document.querySelectorAll(".card .foot [data-arch], .card .foot [data-del]").forEach((b) => {
+    const t = b.textContent.trim();
+    if (t && !b.title.startsWith(t)) { b.title = `${t} ${b.closest(".card").querySelector(".name")?.textContent || ""}`.trim(); b.setAttribute("aria-label", b.title); }
+  });
+  tip(); new MutationObserver(tip).observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+
+<script>/* roshub-wsui: workspace cards and workspace pages */
+(() => {
+  const short = (p) => p.replace(/^\/home\/[^/]+/, "~");
+  const projectsFor = (ws) => ((LIB && LIB.projects) || []).filter((p) => {
+    const w = (p.meta && p.meta.workspace) || "";
+    return w && (w === ws.path || w.replace(/^~/, "") && ws.path.endsWith(w.replace(/^~/, "")));
+  });
+  let WS = null;
+  const loadWs = async () => {
+    if (!LIB) LIB = await api("/api/hub/library");
+    WS = (await api("/api/hub/workspaces")).workspaces || [];
+    return WS;
+  };
+
+  /* --- list: cards --- */
+  workspacesView = async function () {
+    $("#view").innerHTML = `<h1>Workspaces</h1><p class="sub">colcon workspaces on this machine. Open one to see its projects and the launch files you can run.</p><div id="wsl" class="mut">Scanning…</div>`;
+    const list = await loadWs();
+    $("#wsl").className = "wscards";
+    $("#wsl").innerHTML = list.map((w) => {
+      const launches = w.packages.reduce((n, p) => n + p.launch.length, 0);
+      const unbuilt = w.packages.filter((p) => !p.built).length, stale = w.packages.filter((p) => p.stale).length;
+      const names = w.packages.map((p) => p.name), dups = new Set(names.filter((n, i) => names.indexOf(n) !== i));
+      const projs = projectsFor(w).length;
+      const state = dups.size ? `<span class="badge bad">duplicate packages</span>`
+        : !w.built ? `<span class="badge">not built</span>`
+        : stale ? `<span class="badge bad">${stale} changed since build</span>`
+        : unbuilt ? `<span class="badge">${unbuilt} not built</span>` : `<span class="badge ok">built</span>`;
+      return `<a class="card wscard" href="#/w/${encodeURIComponent(w.name)}">
+        <div class="head"><span class="name grow">${esc(w.name)}</span></div>
+        <div class="path" title="${esc(w.path)}">${esc(short(w.path))}</div>
+        <div class="wsstats"><span><b>${w.packages.length}</b> packages</span><span><b>${launches}</b> launch files</span><span><b>${projs}</b> project${projs === 1 ? "" : "s"}</span></div>
+        <div class="badges">${state}</div></a>`;
+    }).join("") || `<div class="empty">No workspaces with a <code>src/</code> folder found. Use <b>+ New project</b> to import one from GitHub or a folder.</div>`;
+  };
+
+  /* --- detail page --- */
+  async function workspaceView(name) {
+    for (const a of document.querySelectorAll("nav.tabs a")) a.classList.toggle("on", a.dataset.tab === "workspaces");
+    const list = WS || await loadWs();
+    const w = list.find((x) => x.name === name) || (await loadWs()).find((x) => x.name === name);
+    if (!w) { $("#view").innerHTML = `<div class="empty">No workspace called <b>${esc(name)}</b>. <a href="#/workspaces">All workspaces</a></div>`; return; }
+    const projs = projectsFor(w);
+    const names = w.packages.map((p) => p.name), dups = [...new Set(names.filter((n, i) => names.indexOf(n) !== i))];
+    const withLaunch = w.packages.filter((p) => p.launch.length);
+    $("#view").innerHTML = `
+      <p><a href="#/workspaces">← Workspaces</a></p>
+      <div class="phead"><div class="grow"><h1 style="margin:0">${esc(w.name)}</h1>
+        <p class="sub" style="margin:4px 0 0">${esc(short(w.path))} · ${w.packages.length} packages · ${w.built ? "built" : "not built"}</p></div>
+        <button class="primary" id="wsNew">+ New project</button></div>
+      ${dups.length ? `<div class="empty bad" style="margin:12px 0">Duplicate package names (${esc(dups.slice(0, 4).join(", "))}${dups.length > 4 ? "…" : ""}): colcon cannot build this as one workspace. It probably holds copies for several ROS distros. Use a sub-folder as the workspace instead.</div>` : ""}
+      <h2 style="font-size:17px;margin:22px 0 8px">Projects using this workspace</h2>
+      <div class="wsproj">${projs.map((p) => `<a href="#/p/${encodeURIComponent(p.name)}">${esc(p.name)}</a>`).join("") || `<span class="mut">None yet. Pick a scenario below to create one.</span>`}</div>
+      <h2 style="font-size:17px;margin:22px 0 8px">Scenarios <span class="mut" style="font-size:13px;font-weight:400">· launch files you can run</span></h2>
+      <div class="card" style="padding:6px 12px">${withLaunch.map((p) => `<div class="wsrow"><div><b>${esc(p.name)}</b><br>
+          <span class="${p.stale ? "bad" : p.built ? "ok" : "mut"}" style="font-size:12px">${p.stale ? "changed since build" : p.built ? "built" : "not built"}</span></div>
+          <div>${p.launch.map((l) => `<div class="scen"><code title="${esc(l)}">${esc(l.split("/").pop())}</code>
+            <button data-scen="${esc(p.name + " " + l.split("/").pop())}">Create project</button></div>`).join("")}</div></div>`).join("")
+        || `<p class="mut">No launch files found.</p>`}</div>
+      <details class="sect" style="margin-top:18px"><summary>All packages (${w.packages.length})</summary>
+        ${w.packages.map((p) => `<div class="wsrow"><div><b>${esc(p.name)}</b></div><div class="mut" style="font-size:12px">${esc(short(p.path))}${p.launch.length ? "" : " · no launch files"}</div></div>`).join("")}
+      </details>`;
+    const create = (launch) => {
+      openNewFrom({ source: "folder", path: w.path });
+      if (!launch) return;
+      const t0 = Date.now(), tick = setInterval(() => {               // wait for the folder fetch to fill the form
+        if (/✓/.test(($("#impMsg") || {}).textContent || "") || Date.now() - t0 > 8000) {
+          clearInterval(tick); $("#nf-launch").value = launch;
+          const pkg = launch.split(" ")[0], file = launch.split(" ")[1].replace(/\.launch\.(py|xml|yaml)$/, "");
+          if (!$("#nf-name").dataset.touched) $("#nf-name").value = `${pkg}_${file}`.replace(/[^A-Za-z0-9_]/g, "_").slice(0, 48);
+        }
+      }, 150);
+    };
+    $("#wsNew").onclick = () => create("");
+    for (const b of document.querySelectorAll("[data-scen]")) b.onclick = () => create(b.dataset.scen);
+  }
+
+  /* --- routing: #/w/<name> --- */
+  window.removeEventListener("hashchange", route);
+  const route0 = route;
+  route = async function () {
+    const h = location.hash.slice(1);
+    if (h.startsWith("/w/")) {
+      clearInterval(poll); poll = null;
+      try { return await workspaceView(decodeURIComponent(h.slice(3))); }
+      catch (e) { $("#view").innerHTML = `<div class="empty bad">Could not load the workspace: ${esc(e.message)}</div>`; return; }
+    }
+    return route0.apply(this, arguments);
+  };
+  window.addEventListener("hashchange", route);
+  if (location.hash.startsWith("#/w/")) route();
+})();
+</script>
+
+<script>/* roshub-wscache: scan info, Rescan, auto-rescan */
+(() => {
+  const ago = (t) => { const s = Date.now() / 1000 - t; return s < 90 ? "just now" : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : `${Math.round(s / 86400)} d ago`; };
+  const inner = api;
+  let last = null;
+  api = async function (path, opts) {
+    const r = await inner(path, opts);
+    if (typeof path === "string" && path.startsWith("/api/hub/workspaces")) { last = r; setTimeout(bar, 0); }
+    return r;
+  };
+  function bar() {
+    const host = document.querySelector("#view h1 + p.sub");
+    if (!host || !last || !location.hash.startsWith("#/workspaces")) return;
+    let b = document.getElementById("wsbar");
+    if (!b) { host.insertAdjacentHTML("afterend", `<div id="wsbar" style="display:flex;align-items:center;gap:14px;margin:4px 0 14px;font-size:13px"></div>`); b = document.getElementById("wsbar"); }
+    b.innerHTML = `<span class="mut">Scanned ${ago(last.scanned_at)}${last.scan_seconds ? ` · took ${last.scan_seconds} s` : ""}</span>
+      <button id="wsRescan">Rescan</button>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="wsAuto" ${last.auto ? "checked" : ""}> Rescan every time I open this tab</label>`;
+    $("#wsRescan").onclick = async () => {
+      const btn = $("#wsRescan"); btn.disabled = true; btn.textContent = "Scanning… (can take a while)";
+      try { await api("/api/hub/workspaces?refresh=1"); await workspacesView(); } finally { btn.disabled = false; }
+    };
+    $("#wsAuto").onchange = async (e) => { await inner(`/api/hub/workspaces?auto=${e.target.checked ? 1 : 0}`); last.auto = e.target.checked; toast(e.target.checked ? "Workspaces rescan on every visit" : "Workspaces use the last scan"); };
+  }
+  new MutationObserver(bar).observe(document.getElementById("view"), { childList: true });
+})();
+</script>
+</body>
+</html>

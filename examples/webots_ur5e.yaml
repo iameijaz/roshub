@@ -1,0 +1,16 @@
+webots_ur5e:
+  description: UR5e arm in Webots (untested)
+  meta: {project_type: arm, simulator: webots, rmw: rmw_zenoh_cpp, mode: robust}
+  env: {RMW_IMPLEMENTATION: rmw_zenoh_cpp}
+  runbook:
+  - id: router
+    title: Zenoh router
+    reuse: true
+    run: {cmd: ros2 run rmw_zenoh_cpp rmw_zenohd, bg: true}
+    ready: [{port: 7447}]
+    timeout: 20
+  - id: launch
+    title: ros2 launch webots_ros2_universal_robot
+    run: {cmd: ros2 launch webots_ros2_universal_robot robot_world_launch.py, bg: true}   # verify the launch name
+    ready: [{hz: /clock, min_hz: 1}]
+    timeout: 180

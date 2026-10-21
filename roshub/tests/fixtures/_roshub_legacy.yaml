@@ -1,0 +1,8 @@
+projects:
+  tb3_world:
+    description: TurtleBot3 world (legacy single-file layout)
+    env:
+      TURTLEBOT3_MODEL: burger
+    steps:
+    - name: gazebo
+      cmd: ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py

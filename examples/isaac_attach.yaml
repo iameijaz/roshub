@@ -1,0 +1,16 @@
+isaac_attach:
+  description: Attach to a running Isaac Sim scene (template)
+  meta: {project_type: mobile, simulator: isaac_sim, rmw: rmw_zenoh_cpp, mode: robust}
+  env: {RMW_IMPLEMENTATION: rmw_zenoh_cpp}
+  runbook:
+  - id: router
+    title: Zenoh router
+    reuse: true
+    run: {cmd: ros2 run rmw_zenoh_cpp rmw_zenohd, bg: true}
+    ready: [{port: 7447}]
+    timeout: 20
+  - id: sim
+    title: Isaac Sim playing
+    manual: Start Isaac Sim with its ROS 2 bridge, load your scene and press Play. This step passes once /clock ticks.
+    ready: [{hz: /clock, min_hz: 1}]
+    timeout: 900
