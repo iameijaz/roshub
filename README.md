@@ -8,7 +8,7 @@ ROS 2 fails quietly. A topic is listed but no data arrives. A workspace was neve
 
 > **Status: alpha (v0.1).** Tested on Ubuntu 24.04 + ROS 2 Jazzy, native and WSL2, with Gazebo Harmonic. Isaac Sim works in attach mode. Webots and MuJoCo examples are untested.
 
-<!-- TODO: demo GIF here (docs/launch/DEMO_VIDEO.md) -->
+<!-- TODO: demo GIF here -->
 
 ## What it does
 
@@ -56,4 +56,4 @@ Bug reports with a ROSHub report attached are the most useful thing you can send
 
 ## License
 
-[Apache-2.0](LICENSE)
+[MIT](LICENSE): use it however you like.

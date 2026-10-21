@@ -29,7 +29,7 @@ mkdir -p "$WS/src/demo/demo_pkg/src" "$WS/src/demo/demo_pkg/launch"
 cat > "$WS/src/demo/demo_pkg/package.xml" <<'EOF'
 <?xml version="1.0"?>
 <package format="3"><name>demo_pkg</name><version>0.0.1</version><description>demo</description>
-<maintainer email="ci@example.com">ci</maintainer><license>Apache-2.0</license>
+<maintainer email="ci@example.com">ci</maintainer><license>MIT</license>
 <depend>ros_gz_sim</depend></package>
 EOF
 touch "$WS/src/demo/demo_pkg/launch/demo_world.launch.py"

@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     container: ros:jazzy
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install test tools
         run: apt-get update -q && apt-get install -y -q python3-pytest python3-yaml curl git
       - name: Unit tests
